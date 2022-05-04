@@ -1,4 +1,4 @@
-#DeepSEA Training Scripts
+# DeepSEA Training Scripts
 
 Training is mainly done through Selene by setting the proper .yml file.
 
