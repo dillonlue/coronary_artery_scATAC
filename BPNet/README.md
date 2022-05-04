@@ -2,7 +2,7 @@
 
 BPnet was trained using code from https://github.com/kundajelab/retina-models.
 
-Before starting, git clone git@github.com:kundajelab/retina-models.git in this directory.
+Before starting, git clone `git@github.com:kundajelab/retina-models.git` in this directory.
 
 Inside the scripts folder, there is a Snakemake pipeline for preprocessing and training.
 
