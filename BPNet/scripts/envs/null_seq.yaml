@@ -1,0 +1,4 @@
+dependencies:
+ - bioconductor-bsgenome.hsapiens.ucsc.hg38.masked
+ - r-gkmsvm
+ - r-argparser

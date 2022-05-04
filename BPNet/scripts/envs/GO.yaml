@@ -1,0 +1,7 @@
+dependencies:
+ - r-tidyverse
+ - r-argparser
+ - bioconductor-topgo
+ - pandas
+ - argparse
+ - bioconductor-org.hs.eg.db

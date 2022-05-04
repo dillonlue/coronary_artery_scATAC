@@ -1,0 +1,32 @@
+---
+ops: [analyze]
+model: {
+    # TODO: please update this with the absolute path to the model file
+    path: deeperdeepsea.py,
+    class: DeeperDeepSEA,
+    class_args: {
+        sequence_length: 1024,
+        n_targets: 9
+    },
+    non_strand_specific: mean
+}
+analyze_sequences: !obj:selene_sdk.predict.AnalyzeSequences {
+    sequence_length: 1024,
+    features: !obj:selene_sdk.utils.load_features_list {
+        input_path: ./data/features.txt
+    },
+    trained_model_path: models/2022-05-02-21-13-25/best_model.pth.tar,
+    use_cuda: True,  # TODO: update if CUDA is not enabled on your machine.
+    reference_sequence: !obj:selene_sdk.sequences.Genome {
+        input_path: ../resources/hg38_UCSC.fa
+    }
+}
+variant_effect_prediction: {
+    vcf_files: [
+        ./CAD.vcf
+    ],
+    save_data: ["abs_diffs", "diffs", "logits", "predictions"],
+    output_dir: ./variant_prediction_output
+}
+random_seed: 1000
+...

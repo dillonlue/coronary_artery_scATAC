@@ -1,0 +1,150 @@
+Building DAG of jobs...
+The code used to generate one or several output files has changed:
+    To inspect which output files have changes, run 'snakemake --list-code-changes'.
+    To trigger a re-run, use 'snakemake -R $(snakemake --list-code-changes)'.
+Using shell: /usr/bin/bash
+Provided cluster nodes: 400
+Conda environments: ignored
+Job stats:
+job                   count    min threads    max threads
+------------------  -------  -------------  -------------
+fragment_to_bigwig        7              1              1
+run_preprocess            1              1              1
+total                     8              1              1
+
+Select jobs to execute...
+
+[Thu Apr 28 19:20:10 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/unknown_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/unknown.bw
+    jobid: 1
+    wildcards: cell_type=unknown
+    resources: mem_mb=3218, disk_mb=3218, tmpdir=/tmp
+
+Submitted job 1 with external jobid 'Submitted batch job 37904326'.
+
+[Thu Apr 28 19:20:10 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Plasma_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Plasma.bw
+    jobid: 8
+    wildcards: cell_type=Plasma
+    resources: mem_mb=1033, disk_mb=1033, tmpdir=/tmp
+
+Submitted job 8 with external jobid 'Submitted batch job 37904327'.
+
+[Thu Apr 28 19:20:10 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Pericyte_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Pericyte.bw
+    jobid: 3
+    wildcards: cell_type=Pericyte
+    resources: mem_mb=1991, disk_mb=1991, tmpdir=/tmp
+
+Submitted job 3 with external jobid 'Submitted batch job 37904328'.
+
+[Thu Apr 28 19:20:10 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Fibroblast_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Fibroblast.bw
+    jobid: 5
+    wildcards: cell_type=Fibroblast
+    resources: mem_mb=12918, disk_mb=12918, tmpdir=/tmp
+
+Submitted job 5 with external jobid 'Submitted batch job 37904329'.
+
+[Thu Apr 28 19:20:11 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Mast_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Mast.bw
+    jobid: 2
+    wildcards: cell_type=Mast
+    resources: mem_mb=1000, disk_mb=1000, tmpdir=/tmp
+
+Submitted job 2 with external jobid 'Submitted batch job 37904330'.
+
+[Thu Apr 28 19:20:11 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/T_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/T.bw
+    jobid: 4
+    wildcards: cell_type=T
+    resources: mem_mb=4725, disk_mb=4725, tmpdir=/tmp
+
+Submitted job 4 with external jobid 'Submitted batch job 37904331'.
+
+[Thu Apr 28 19:20:11 2022]
+rule fragment_to_bigwig:
+    input: /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Macrophage_PE.bed
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Macrophage.bw
+    jobid: 6
+    wildcards: cell_type=Macrophage
+    resources: mem_mb=14725, disk_mb=14725, tmpdir=/tmp
+
+Submitted job 6 with external jobid 'Submitted batch job 37904332'.
+[Thu Apr 28 19:27:39 2022]
+Error in rule fragment_to_bigwig:
+    jobid: 8
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Plasma.bw
+    shell:
+        
+    module load gcc/9.2.0
+    module load bedtools/2.29.2
+
+    /scratch/dyl3pc/BPNet/retina-models/scripts/frag_to_unstranded_bigwig.sh             /scratch/dyl3pc/BPNet/output/bigwig/Plasma             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Plasma_PE.bed
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    cluster_jobid: Submitted batch job 37904327
+
+Error executing rule fragment_to_bigwig on cluster (jobid: 8, external: Submitted batch job 37904327, jobscript: /sfs/lustre/bahamut/scratch/dyl3pc/BPNet/scripts/.snakemake/tmp.zg1jlh3x/BPNet.snakejob.8.sh). For error details see the cluster log and the log files of the involved rule(s).
+Job failed, going on with independent jobs.
+[Thu Apr 28 19:41:41 2022]
+Error in rule fragment_to_bigwig:
+    jobid: 3
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Pericyte.bw
+    shell:
+        
+    module load gcc/9.2.0
+    module load bedtools/2.29.2
+
+    /scratch/dyl3pc/BPNet/retina-models/scripts/frag_to_unstranded_bigwig.sh             /scratch/dyl3pc/BPNet/output/bigwig/Pericyte             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Pericyte_PE.bed
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    cluster_jobid: Submitted batch job 37904328
+
+Error executing rule fragment_to_bigwig on cluster (jobid: 3, external: Submitted batch job 37904328, jobscript: /sfs/lustre/bahamut/scratch/dyl3pc/BPNet/scripts/.snakemake/tmp.zg1jlh3x/BPNet.snakejob.3.sh). For error details see the cluster log and the log files of the involved rule(s).
+Job failed, going on with independent jobs.
+[Thu Apr 28 19:43:01 2022]
+Error in rule fragment_to_bigwig:
+    jobid: 1
+    output: /scratch/dyl3pc/BPNet/output/bigwig/unknown.bw
+    shell:
+        
+    module load gcc/9.2.0
+    module load bedtools/2.29.2
+
+    /scratch/dyl3pc/BPNet/retina-models/scripts/frag_to_unstranded_bigwig.sh             /scratch/dyl3pc/BPNet/output/bigwig/unknown             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/unknown_PE.bed
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    cluster_jobid: Submitted batch job 37904326
+
+Error executing rule fragment_to_bigwig on cluster (jobid: 1, external: Submitted batch job 37904326, jobscript: /sfs/lustre/bahamut/scratch/dyl3pc/BPNet/scripts/.snakemake/tmp.zg1jlh3x/BPNet.snakejob.1.sh). For error details see the cluster log and the log files of the involved rule(s).
+Job failed, going on with independent jobs.
+[Thu Apr 28 19:50:42 2022]
+Error in rule fragment_to_bigwig:
+    jobid: 2
+    output: /scratch/dyl3pc/BPNet/output/bigwig/Mast.bw
+    shell:
+        
+    module load gcc/9.2.0
+    module load bedtools/2.29.2
+
+    /scratch/dyl3pc/BPNet/retina-models/scripts/frag_to_unstranded_bigwig.sh             /scratch/dyl3pc/BPNet/output/bigwig/Mast             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes             /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/Mast_PE.bed
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+    cluster_jobid: Submitted batch job 37904330
+
+Error executing rule fragment_to_bigwig on cluster (jobid: 2, external: Submitted batch job 37904330, jobscript: /sfs/lustre/bahamut/scratch/dyl3pc/BPNet/scripts/.snakemake/tmp.zg1jlh3x/BPNet.snakejob.2.sh). For error details see the cluster log and the log files of the involved rule(s).
+Job failed, going on with independent jobs.
+slurmstepd: error: *** JOB 37904324 ON udc-aw29-19b CANCELLED AT 2022-04-29T09:26:22 ***

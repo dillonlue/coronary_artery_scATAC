@@ -1,0 +1,229 @@
+########################################### scATAC BPNet ##############################################
+
+import os
+import pandas as pd
+import numpy as np
+import sys
+import json
+
+#folds = [1,2,3,4,5]
+cell_types, = glob_wildcards("/project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_peaks_macs2/{cell_type}_m2PE_peaks.narrowPeak")
+#cell_types.remove("Macrophage")
+#cell_types.remove("Pericyte")
+#cell_types.remove("SMC")
+#cell_types = ["Macrophage", "Pericyte"]
+
+folds=[1,2,3,4, 5]
+#cell_types = ["SMC"]
+
+
+######################################################################################
+############################################ Preprocess ##############################
+######################################################################################
+rule edgeR_filtered_counts:
+    input:
+        counts = "/scratch/dyl3pc/harrison/data/circRNA/profiles/counts_filtered.tsv",
+        covariates = "/scratch/dyl3pc/harrison/data/circRNA/DE/edgeR/covariates/covariates.tsv"
+    output:
+        Rdata = "/scratch/dyl3pc/harrison/data/circRNA/DE/edgeR/output_counts/all_results.csv"
+    conda:
+        "envs/edgeR.yaml"
+    shell:
+        """
+        Rscript scripts/edgeR.R \
+            --counts {input.counts} \
+            --covariates {input.covariates} \
+            --output_dir {params.output_dir}
+        """
+
+
+rule fragment_to_bigwig:
+    input:
+        fragment_file = "/project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/{cell_type}_PE.bed"
+    output:
+        big_wig = "/scratch/dyl3pc/BPNet/output/bigwig/{cell_type}.bw"
+    params:
+        output_dir = "/scratch/dyl3pc/BPNet/output/bigwig/{cell_type}"
+    conda:
+        "envs/big_wig.yaml"
+    shell:
+        """
+    module load gcc/9.2.0
+    module load bedtools/2.29.2
+
+    /scratch/dyl3pc/BPNet/retina-models/scripts/frag_to_unstranded_bigwig.sh \
+            {params.output_dir} \
+            /project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes \
+            {input.fragment_file}
+        """
+
+rule center_peak_file_at_summit:
+    input:
+       MACS2 = "/project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_peaks_macs2/{cell_type}_m2PE_peaks.narrowPeak"
+    output:
+       output = expand("/scratch/dyl3pc/BPNet/output/pos_regions/{{cell_type}}/fold{fold}.bed", fold=folds),
+       all = "/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/all.bed"
+    run:
+        peak_df = pd.read_csv(input.MACS2,
+                                     header=None,
+                                     sep='\t')
+        summit_point = peak_df[1] + peak_df[9]
+        peak_df[1] = summit_point - 500
+        peak_df[2] = summit_point + 500
+        peak_df[9] = 500
+        
+        start = 0
+        chr_sizes_dict = pd.read_csv("/project/cphg-millerlab/CAD_QTL/coronary_QTL/epigenome/scATAC/celltype_fragments_ArchR/chrom_hg38.sizes", sep='\t', header=None,index_col=0).to_dict()[1]
+
+        def is_out_of_bounds(row):
+            if row[2] > chr_sizes_dict[row[0]]:
+                return True
+            if row[1] < 0:
+                return True
+            return False
+
+        peak_df = peak_df[~peak_df.apply(is_out_of_bounds, axis=1)]
+
+        def is_valid(e):
+            if e[:3] != "chr":
+                return False
+            if not e[3:].isnumeric() and e[3:]:
+                return False
+            return True
+        peak_df = peak_df[peak_df[0].apply(is_valid)]
+        peak_df = peak_df.sample(frac=1).reset_index(drop=True)
+        peak_df.to_csv(output.all, sep='\t', index=False, header=False)
+
+        increment = peak_df.shape[0]//5 + 1
+        for output in output.output:
+            fold_peak_df = peak_df.iloc[start:start+increment]
+            start+=increment
+            fold_peak_df.to_csv(output, sep='\t', index=False, header=False)
+
+rule get_null_seq_input:
+    input:
+       pos_peak = "/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/fold{fold}.bed"
+    output:
+       null_seq = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/input_gkmSVM/{cell_type}/fold{fold}.bed"
+    run:
+        peak_df = pd.read_csv(input.pos_peak, sep='\t', header=None)
+        peak_df[[0,1,2]].to_csv(output.null_seq, sep='\t', index=False, header=False)
+        
+
+rule get_null_seq:
+    input:
+       input = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/input_gkmSVM/{cell_type}/fold{fold}.bed"
+    output:
+       output = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/output_gkmSVM/{cell_type}/fold{fold}.bed"
+    conda:
+        "envs/null_seq.yaml"
+    shell:
+        """
+        /sfs/lustre/bahamut/scratch/dyl3pc/BPNet/scripts/.snakemake/conda/3458ce21/bin/Rscript scripts/null_seq.R \
+            --input_bed {input.input} \
+            --output_bed {output.output}
+        """
+
+rule process_gkmSVM_null_seq:
+    input:
+       input = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/output_gkmSVM/{cell_type}/fold{fold}.bed"
+    output:
+       output = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/candidate_negatives/{cell_type}/fold{fold}.bed"
+    run:
+        df = pd.read_csv(input.input, sep='\t', names=["chr", "start", "end"])
+        df['end'] = df['end'] + 1
+        for i in range(4,10):
+            df[i] = "."
+        df[10] = 500
+        def is_valid(e):
+            if e[:3] != "chr":
+                return False
+            if not e[3:].isnumeric() and e[3:]:
+                return False
+            return True
+        df = df[df['chr'].apply(is_valid)]
+        df.to_csv(output.output, sep='\t', header=False, index=False)
+
+rule choose_nonoverlaps_with_postives:
+    input:
+        potential_neg = "/scratch/dyl3pc/BPNet/output/null_regions_intermediate/candidate_negatives/{cell_type}/fold{fold}.bed",
+        all = "/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/all.bed"
+    output:
+        negatives = "/scratch/dyl3pc/BPNet/output/null_regions/{cell_type}/fold{fold}.bed"
+    shell:
+        """
+        module load gcc/9.2.0
+        module load bedtools/2.29.2
+        bedtools intersect -v -a {input.potential_neg} \
+                -b {input.all} > \
+                {output.negatives}
+        """
+        
+rule run_preprocess:
+    input:
+        big_wig = expand("/scratch/dyl3pc/BPNet/output/bigwig/{cell_type}.bw", cell_type=cell_types),
+        pos_peaks = expand("/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/fold{fold}.bed", cell_type=cell_types, fold=folds),
+        null_peaks = expand("/scratch/dyl3pc/BPNet/output/null_regions/{cell_type}/fold{fold}.bed", cell_type=cell_types, fold=folds),
+        all = expand("/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/all.bed", cell_type=cell_types)
+
+
+rule run_train:
+    input:
+        input1 = expand("/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}.h5", fold=folds, cell_type=cell_types),
+
+rule train:
+    input:
+        big_wig = "/scratch/dyl3pc/BPNet/output/bigwig/{cell_type}.bw",
+        pos_peaks = "/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/fold{fold}.bed",
+        null_peaks = "/scratch/dyl3pc/BPNet/output/null_regions/{cell_type}/fold{fold}.bed"
+    output:
+        output="/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}.h5"
+    params:
+        output_prefix="/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}"
+    log:
+        "/scratch/dyl3pc/BPNet/output/model/{cell_type}/logs/fold{fold}.log",
+    shell:
+        """
+        export CUDA_VISIBLE_DEVICES=0,1,2,3
+        cd /scratch/dyl3pc/BPNet/retina-models/src
+        python3 train.py \
+           --genome /scratch/dyl3pc/Clint/resources/hg38_UCSC.fa \
+           --bigwig {input.big_wig} \
+           --peaks {input.pos_peaks} \
+           --nonpeaks {input.null_peaks} \
+           --output-prefix {params.output_prefix} \
+           --test-chr "chr1" "chr3" "chr6" --val-chr "chr8" "chr20" \
+           --max-jitter 500 > {log}
+        """
+
+
+rule run_predict:
+    input:
+        input1 = expand("/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}.metrics.json", fold=folds, cell_type=cell_types),
+
+rule predict:
+    input:
+        big_wig = "/scratch/dyl3pc/BPNet/output/bigwig/{cell_type}.bw",
+        pos_peaks = "/scratch/dyl3pc/BPNet/output/pos_regions/{cell_type}/fold{fold}.bed",
+        null_peaks = "/scratch/dyl3pc/BPNet/output/null_regions/{cell_type}/fold{fold}.bed",
+        model="/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}.h5"
+    output:
+        output="/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}.metrics.json"
+    params:
+        output_prefix="/scratch/dyl3pc/BPNet/output/model/{cell_type}/fold{fold}"
+    log:
+        "/scratch/dyl3pc/BPNet/output/model/{cell_type}/logs/fold{fold}.metrics.log",
+    shell:
+        """
+        export CUDA_VISIBLE_DEVICES=0,1,2,3
+        cd /scratch/dyl3pc/BPNet/retina-models/src
+
+        python3 metrics.py \
+            --genome /scratch/dyl3pc/Clint/resources/hg38_UCSC.fa \
+            --bigwig {input.big_wig} \
+            --peaks {input.pos_peaks} \
+            --nonpeaks {input.null_peaks} \
+            --output-prefix {params.output_prefix} \
+            --model {input.model} \
+            --test-chr "chr2" "chr8" "chr9" "chr16" > {log}
+        """

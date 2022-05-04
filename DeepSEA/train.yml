@@ -1,0 +1,72 @@
+---
+ops: [train]
+model: {
+    path: ./deeperdeepsea.py,
+    class: DeeperDeepSEA,
+    class_args: {
+        sequence_length: 1024,
+        n_targets: 9,
+    },
+    non_strand_specific: mean
+}
+sampler: !obj:selene_sdk.samplers.MultiSampler {
+    train_sampler: !obj:selene_sdk.samplers.dataloader.SamplerDataLoader {
+        sampler: !obj:selene_sdk.samplers.RandomPositionsSampler {
+            target_path: ../MACS2_data/all_sorted.bed.gz,
+            reference_sequence: !obj:selene_sdk.sequences.Genome {
+                input_path: ../resources/hg38_UCSC.fa,
+                blacklist_regions: hg38
+            },
+            features: !obj:selene_sdk.utils.load_features_list {
+                input_path: ../MACS2_data/features.txt
+            },
+            test_holdout: [chr1, chr3, chr6],
+            validation_holdout: [chr8, chr20],
+            sequence_length: 1024,
+            center_bin_to_predict: [512, 513],
+            feature_thresholds: null,
+            save_datasets: []
+        },
+        num_workers: 16,
+        batch_size: 64,
+    },
+    validate_sampler: !obj:selene_sdk.samplers.RandomPositionsSampler {
+        target_path: ../MACS2_data/all_sorted.bed.gz,
+        reference_sequence: !obj:selene_sdk.sequences.Genome {
+            input_path: ../resources/hg38_UCSC.fa,
+            blacklist_regions: hg38
+        },
+        features: !obj:selene_sdk.utils.load_features_list {
+            input_path: ../MACS2_data/features.txt
+        },
+        test_holdout: [chr1, chr3, chr6],
+        validation_holdout: [chr8, chr20],
+        sequence_length: 1024,
+        center_bin_to_predict: [512, 513],
+        mode: validate,
+        save_datasets: [validate],
+        output_dir: saved_valid_test
+    },
+    features: !obj:selene_sdk.utils.load_features_list {
+        input_path:  ../MACS2_data/features.txt
+    }
+}
+train_model: !obj:selene_sdk.TrainModel {
+    batch_size: 64,
+    report_stats_every_n_steps: 5000,
+    n_validation_samples: 25600,
+    n_test_samples: 1600000,
+    use_cuda: True,
+    data_parallel: True, #we recommend multi-GPU training only on NVLink-enabled GPUs
+    cpu_n_threads: 19,
+    report_gt_feature_n_positives: 5,
+    use_scheduler: False,
+    max_steps: 1000000000,
+    metrics: {
+        roc_auc: !import sklearn.metrics.roc_auc_score,
+        average_precision: !import sklearn.metrics.average_precision_score
+    },
+}
+output_dir: ./models
+random_seed: 1447
+...
