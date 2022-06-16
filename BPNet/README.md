@@ -9,6 +9,7 @@ Inside the scripts folder, there is a Snakemake pipeline for preprocessing and t
 To rerun the pipeline:
 1. run_snakemake_preprocess.slurm => preprocess the fragment and peak files and gets GC matched null regions
 2. run_snakemake_train.slurm => train and evaluate model
+3. run_snakemake_modisco.slurm => run modisco
 
 Relevant rules in Snakemake:
 1. train => trains BPNet model using code from the retina-models repository (above)
